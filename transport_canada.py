@@ -31,6 +31,8 @@ rq2_sample = rq2_df.sample(sample_size, random_state=42)
 
 # Selecting predictors and targets
 
+# RQ1: Checking the relationship between crash severity and various factors such as weather,trafic,road alignment, month, day of week, hour and number of vehicles involved in the crash.
+
 rq1_vars = ["C_WTHR","C_RSUR","C_RALN","C_TRAF","C_MNTH","C_WDAY","C_HOUR","C_VEHS"]
 
 rq1 = rq1_sample.dropna(subset=rq1_vars + ["C_SEV"]).copy()
@@ -52,4 +54,21 @@ print("RQ1 final:", X_rq1.shape, y_rq1.shape)
 model_rq1 = sm.Logit(y_rq1, X_rq1).fit(disp=1, maxiter=200)
 print(model_rq1.summary())
 
-# rq2
+# RQ2: Examining the relationship between injury severity and various factors such as safety equipment usage, user type, vehicle type, age, sex, weather, hour and number of vehicles involved in the crash.
+rq2_vars = ["P_SAFE","P_USER","V_TYPE","P_AGE","P_SEX","C_WTHR","C_HOUR","C_VEHS"]
+X_rq2 = rq2_sample[rq2_vars].copy()
+y_rq2 = rq2_sample["P_ISEV"].astype(int).copy()
+
+# Force numeric matrix
+X_rq2 = X_rq2.apply(pd.to_numeric, errors="coerce").astype("float32")
+mask = X_rq2.notna().all(axis=1)
+X_rq2 = X_rq2.loc[mask]
+y_rq2 = y_rq2.loc[X_rq2.index]
+
+# Add intercept (Logit needs it)
+X_rq2.insert(0, "const", 1.0)
+
+print("RQ2 final:", X_rq2.shape, y_rq2.shape)
+
+model_rq2 = sm.Logit(y_rq2, X_rq2).fit(disp=1, maxiter=200)
+print(model_rq2.summary())
