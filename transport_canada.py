@@ -52,4 +52,4 @@ print("RQ1 final:", X_rq1.shape, y_rq1.shape)
 model_rq1 = sm.Logit(y_rq1, X_rq1).fit(disp=1, maxiter=200)
 print(model_rq1.summary())
 
-# RQ2: Ordinal Logistic Regression
+# rq2
