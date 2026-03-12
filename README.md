@@ -12,7 +12,7 @@ Data Source: Transport Canada – National Collision Database (NCDB)
 
 ## Research Questions
 
-### RQ1: Environmental and Roadway Conditions
+### RQ1: Environment and Traffic Context Factors Affecting Crash Severity
 
 How do road, weather, and traffic control conditions influence the likelihood of fatal collisions in Canada between 1999 and 2014?
 
