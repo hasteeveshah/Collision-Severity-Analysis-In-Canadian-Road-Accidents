@@ -31,29 +31,130 @@ VARIABLE_LABELS = {
     "P_AGE": "Person age",
 }
 
+VALUE_LABELS = {
+    "C_WTHR": {
+        "1": "Clear and sunny",
+        "2": "Cloudy",
+        "3": "Raining",
+        "4": "Snowing",
+        "5": "Freezing rain / sleet / hail",
+        "6": "Visibility limitation",
+        "7": "Strong wind",
+        "Q": "Other weather condition",
+        "OTHER": "Other weather condition",
+        "U": "Unknown weather condition",
+        "X": "No weather data",
+    },
+    "C_RSUR": {
+        "1": "Dry, normal",
+        "2": "Wet",
+        "3": "Snow",
+        "4": "Slush / wet snow",
+        "5": "Icy",
+        "6": "Sand / gravel / dirt",
+        "7": "Muddy",
+        "8": "Oil",
+        "9": "Flooded",
+        "Q": "Other road surface",
+        "OTHER": "Other road surface",
+        "U": "Unknown road surface",
+        "X": "No road-surface data",
+    },
+    "C_RALN": {
+        "1": "Straight and level",
+        "2": "Straight with gradient",
+        "3": "Curved and level",
+        "4": "Curved with gradient",
+        "5": "Top of hill or gradient",
+        "6": "Bottom of hill or gradient",
+        "Q": "Other road alignment",
+        "OTHER": "Other road alignment",
+        "U": "Unknown road alignment",
+        "X": "No road-alignment data",
+    },
+    "C_TRAF": {
+        "1": "Traffic signals fully operational",
+        "2": "Traffic signals in flashing mode",
+        "3": "Stop sign",
+        "4": "Yield sign",
+        "5": "Warning sign",
+        "6": "Pedestrian crosswalk",
+        "7": "Police officer",
+        "8": "School guard / flagman",
+        "9": "School crossing",
+        "10": "Reduced speed zone",
+        "11": "No passing zone sign",
+        "12": "Markings on the road",
+        "13": "School bus stopped with signal lights flashing",
+        "14": "School bus stopped with signal lights not flashing",
+        "15": "Railway crossing with signals / gates",
+        "16": "Railway crossing with signs only",
+        "17": "Control device not specified",
+        "18": "No control present",
+        "QQ": "Other traffic control",
+        "OTHER": "Other traffic control",
+        "UU": "Unknown traffic control",
+        "XX": "No traffic-control data",
+    },
+    "P_SAFE": {
+        "1": "No safety device used",
+        "2": "Safety device used",
+        "9": "Helmet worn",
+        "10": "Reflective clothing worn",
+        "11": "Helmet and reflective clothing used",
+        "12": "Other safety device",
+        "13": "No safety device equipped",
+        "NN": "Not applicable",
+        "QQ": "Other safety-device code",
+        "OTHER": "Other safety-device code",
+        "UU": "Unknown safety-device code",
+        "XX": "No safety-device data",
+    },
+    "P_USER": {
+        "1": "Motor vehicle driver",
+        "2": "Motor vehicle passenger",
+        "3": "Pedestrian",
+        "4": "Bicyclist",
+        "5": "Motorcyclist",
+        "U": "Unknown / not stated road user",
+        "OTHER": "Other road user type",
+    },
+    "P_SEX": {
+        "F": "Female",
+        "M": "Male",
+        "N": "Not applicable",
+        "U": "Unknown",
+        "X": "No sex data",
+        "OTHER": "Other / unknown sex",
+    },
+    "V_TYPE": {
+        "1": "Light-duty vehicle",
+        "5": "Panel / cargo van",
+        "6": "Other truck / van",
+        "7": "Unit truck > 4,536 kg",
+        "8": "Road tractor",
+        "9": "School bus",
+        "10": "Smaller school bus",
+        "11": "Urban / intercity bus",
+        "14": "Motorcycle / moped",
+        "16": "Off-road vehicle",
+        "17": "Bicycle",
+        "18": "Motorhome",
+        "19": "Farm equipment",
+        "20": "Construction equipment",
+        "21": "Fire engine",
+        "22": "Snowmobile",
+        "23": "Streetcar",
+        "NN": "Not applicable vehicle type",
+        "QQ": "Other vehicle type",
+        "OTHER": "Other vehicle type",
+        "UU": "Unknown vehicle type",
+        "XX": "No vehicle-type data",
+    },
+}
+
 TERM_LABEL_OVERRIDES = {
     "const": "Intercept",
-    "P_USER_5": "Motorcyclist",
-    "P_SAFE_12": "Other safety device used",
-    "P_SAFE_09": "Helmet worn",
-    "P_SAFE_13": "No safety device equipped",
-    "C_RSUR_6": "Sand / gravel / dirt road surface",
-    "C_RSUR_5": "Icy road surface",
-    "C_RALN_3": "Curved and level road",
-    "C_RALN_4": "Curved road with gradient",
-    "C_RALN_5": "Top of hill / gradient",
-    "C_WTHR_7": "Strong wind",
-    "V_TYPE_16": "Off-road vehicle (ATV / dirt bike)",
-    "V_TYPE_09": "School bus",
-    "V_TYPE_11": "Urban / intercity bus",
-    "V_TYPE_07": "Heavy unit truck",
-    "V_TYPE_08": "Road tractor (semi truck)",
-    "V_TYPE_05": "Panel / cargo van",
-    "V_TYPE_06": "Other light truck / van",
-    "C_TRAF_06": "Pedestrian crosswalk",
-    "C_TRAF_08": "School guard / flagman",
-    "C_TRAF_18": "Traffic signal removed",
-    "C_WTHR_6": "Severe weather",
     "P_SEX_M": "Male (vs female)",
 }
 
@@ -145,6 +246,9 @@ def prettify_term_label(term: str, *, width: int = 28) -> str:
         marker = f"{prefix}_"
         if term.startswith(marker):
             code = term[len(marker):]
+            mapped_label = lookup_value_label(prefix, code)
+            if mapped_label:
+                return fill(mapped_label, width=width)
             return fill(f"{VARIABLE_LABELS[prefix]} ({code})", width=width)
 
     return fill(term.replace("_", " "), width=width)
@@ -162,12 +266,36 @@ def normalize_code(value: object) -> str:
         return text
 
 
+def lookup_value_label(variable: str, value: object) -> str | None:
+    label_map = VALUE_LABELS.get(variable)
+    if not label_map or pd.isna(value):
+        return None
+
+    raw = str(value).strip()
+    if not raw:
+        return None
+
+    candidates: list[str] = [raw, raw.upper()]
+    normalized = normalize_code(raw)
+    candidates.extend([normalized, normalized.upper()])
+    if normalized.isdigit():
+        candidates.append(normalized.zfill(2))
+
+    for candidate in dict.fromkeys(candidates):
+        label = label_map.get(candidate)
+        if label:
+            return label
+
+    return None
+
+
 def format_profile_value(column: str, value: object) -> str:
     if pd.isna(value):
         return "Missing"
 
-    if column == "P_SEX":
-        return SEX_LABELS.get(str(value), str(value))
+    mapped_label = lookup_value_label(column, value)
+    if mapped_label:
+        return mapped_label
 
     if isinstance(value, str):
         return value.strip()
@@ -194,6 +322,11 @@ def prettify_scenario_label(row: pd.Series, *, width: int = 38) -> str:
     if label:
         prefix = VARIABLE_LABELS.get(variable, variable.replace("_", " "))
         return fill(f"{prefix}: {label}", width=width)
+
+    mapped_label = lookup_value_label(variable, scenario_value)
+    if mapped_label:
+        prefix = VARIABLE_LABELS.get(variable, variable.replace("_", " "))
+        return fill(f"{prefix}: {mapped_label}", width=width)
 
     return fill(str(row.get("Scenario", "")), width=width)
 
@@ -233,7 +366,7 @@ def save_odds_ratio_plots(df_or: pd.DataFrame, top_n: int = 12) -> list[Path]:
     fig.text(
         0.01,
         0.01,
-        "Labels expand variable names; NCDB codes remain in parentheses where the legend text was not mapped.",
+        "Labels use NCDB descriptions where available; unmapped levels keep their original code in parentheses.",
         ha="left",
         fontsize=8,
     )
@@ -253,7 +386,7 @@ def save_odds_ratio_plots(df_or: pd.DataFrame, top_n: int = 12) -> list[Path]:
     fig.text(
         0.01,
         0.01,
-        "Labels expand variable names; NCDB codes remain in parentheses where the legend text was not mapped.",
+        "Labels use NCDB descriptions where available; unmapped levels keep their original code in parentheses.",
         ha="left",
         fontsize=8,
     )
