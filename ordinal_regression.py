@@ -15,10 +15,20 @@ from utils import (
 
 def run_ordinal_models(df_input: pd.DataFrame | None = None, fast: bool = False):
     df = pd.read_parquet("NCDB.parquet") if df_input is None else df_input.copy()
+    if "P_ISEV" not in df.columns:
+        raise KeyError("Expected 'P_ISEV' column in the ordinal regression dataset.")
+
+    # NCDB stores injury severity as strings like "1"/"2"/"3"; coerce once so
+    # the ordinal filter and downstream model use the same numeric classes.
+    df["P_ISEV"] = pd.to_numeric(df["P_ISEV"], errors="coerce")
+
     t0 = time.perf_counter()
     print(f"Loaded data: {len(df):,} rows")
     sample_n = 75000 if df_input is None else None
     base_df = df[df["P_ISEV"].isin([1, 2, 3])].copy()
+
+    if base_df.empty:
+        raise ValueError("No valid ordinal severity rows found after coercing 'P_ISEV' to numeric classes [1, 2, 3].")
 
     if sample_n is not None and len(base_df) > sample_n:
         base_df = base_df.sample(sample_n, random_state=RANDOM_STATE).copy()
@@ -38,13 +48,13 @@ def run_ordinal_models(df_input: pd.DataFrame | None = None, fast: bool = False)
         print(f"Running in FULL mode (ORDINAL_FAST=0), sample_n={sample_n if sample_n is not None else 'external'}")
 
     # RQ1 (Ordinal): Environment and Traffic Context Factors Affecting Crash Severity
-    rq1_features = ["C_WTHR", "C_RSUR", "C_RALN", "C_TRAF", "C_MNTH", "C_WDAY", "C_HOUR", "C_VEHS"]
-    rq1_numeric = ["C_MNTH", "C_WDAY", "C_HOUR", "C_VEHS"]
+    rq1_features = ["C_WTHR", "C_RSUR", "C_RALN", "C_TRAF", "C_MNTH", "C_WDAY", "C_HOUR", "C_VEHS", "C_YEAR"]
+    rq1_numeric = ["C_MNTH", "C_WDAY", "C_HOUR", "C_VEHS","C_YEAR"]
     rq1_cat = ["C_WTHR", "C_RSUR", "C_RALN", "C_TRAF"]
 
     # RQ2 (Ordinal): Human/Vehicle -> Injury Severity (P_ISEV 1/2/3)
-    rq2_features = ["P_SAFE", "P_USER", "P_SEX", "V_TYPE", "P_AGE", "V_YEAR", "C_YEAR"]
-    rq2_numeric = ["P_AGE", "V_YEAR", "C_YEAR"]
+    rq2_features = ["P_SAFE", "P_USER", "P_SEX", "V_TYPE", "P_AGE", "V_YEAR"]
+    rq2_numeric = ["P_AGE", "V_YEAR"]
     rq2_cat = ["P_SAFE", "P_USER", "P_SEX", "V_TYPE"]
 
     # Combined (Ordinal): Env + Human/Vehicle -> P_ISEV
