@@ -1,4 +1,4 @@
-# Analysis of Collision and Severe Injuries in Canadian Road Accidents (1999–2014)
+# Collision Severity Analysis In Canadian Road Accidents
 
 ## Project Overview
 
