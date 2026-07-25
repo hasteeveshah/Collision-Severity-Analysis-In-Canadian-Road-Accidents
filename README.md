@@ -123,7 +123,3 @@ Performance metrics included:
 
 Logistic regression was retained as the primary model due to interpretability and policy applicability.
 
----
-
-## Repository Structure
-
